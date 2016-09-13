@@ -63,13 +63,14 @@ exports.reply = function*(next){
 				mediaId:data.media_id
 			}
 		}else if(content === '7'){
-			var data = yield wechatApi.uploadMaterial('music',__dirname + '/2.jpg')
+			var data = yield wechatApi.uploadMaterial('music',__dirname + '/4.jpg')
 
+			console.log(data);
 			reply = {
 				type:'music',
 				title:'我的音乐',
 				description:'放松一下',
-				musicUrl:'http://mpge.5nd.com/2015/2015-9-12/66325/1.mp3',
+				musicUrl:'http://www.shallowblue.cn/Fade.mp3',
 				thumbMediaId:data.media_id
 			}
 		}
