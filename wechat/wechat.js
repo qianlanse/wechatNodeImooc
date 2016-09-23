@@ -30,6 +30,19 @@ var api = {
 		move:prefix + 'groups/members/update?',
 		batchupdate:prefix + 'groups/members/batchupdate?',
 		del:prefix + 'groups/delete?'
+	},
+	user:{
+		remark:prefix + 'user/info/updateremark?',
+		fetch:prefix + 'user/info?',
+		batchFetch:prefix + 'user/info/batchget?',
+		list:prefix + 'user/get?'
+	},
+	mass:{
+		group:prefix + 'message/mass/sendall?',
+		openId:prefix + 'message/mass/send?',
+		del:prefix + 'message/mass/delete?',
+		preview:prefix + 'message/mass/preview?',
+		check:prefix + 'message/mass/get?'
 	}
 }
 
@@ -178,7 +191,7 @@ Wechat.prototype.fetchMaterial = function(mediaId,type,permanent){
 			.fetchAccessToken()
 			.then(function(data){
 				var url = fetchUrl + '&access_token=' + data.access_token
-				
+
 				var form = {}
 
 				var options = {
@@ -498,6 +511,266 @@ Wechat.prototype.deleteGroup = function(id){
 			})
 	})
 }
+
+// 设置用户备注名
+Wechat.prototype.remarkUser = function(openId,remark){
+	var that = this
+
+	return new Promise(function(resolve,reject){
+		that
+			.fetchAccessToken()
+			.then(function(data){
+				var url = api.user.remark + '&access_token=' + data.access_token
+				var form = {
+					openid:openId,
+					remark:remark
+				}
+				request({method:'POST',url:url,body:form,json:true}).then(function(response){
+					var _data = response.body;
+					if(_data){
+						resolve(_data)
+					}else{
+						throw new Error('Remark user material fails')
+					}
+				})
+				.catch(function(err){
+					reject(err)
+				})
+			})
+	})
+}
+
+// 获取用户基本信息(单个或批量)
+Wechat.prototype.fetchUsers = function(openIds,lang){
+	var that = this
+	var lang = lang || 'zh_CN'
+
+	return new Promise(function(resolve,reject){
+		that
+			.fetchAccessToken()
+			.then(function(data){
+
+				var options = {
+					json:true
+				};
+				if(_.isArray(openIds)){
+					options.url = api.user.batchFetch + '&access_token=' + data.access_token
+					options.body = {
+						user_list:openIds
+					}
+					options.method = 'POST'
+				}else{
+					options.url = api.user.fetch + '&access_token=' + data.access_token + '&openid=' + openIds + '&lang=' + lang
+				}
+				request(options).then(function(response){
+					var _data = response.body;
+					if(_data){
+						resolve(_data)
+					}else{
+						throw new Error('Remark user material fails')
+					}
+				})
+				.catch(function(err){
+					reject(err)
+				})
+			})
+	})
+}
+
+// 获取用户列表
+Wechat.prototype.listUsers = function(openId){
+	var that = this
+
+	return new Promise(function(resolve,reject){
+		that
+			.fetchAccessToken()
+			.then(function(data){
+
+				var url = api.user.list + '&access_token=' + data.access_token;
+				if(openId){
+					url += '&next_openid=' + openId
+				}
+				request({url:url,json:true}).then(function(response){
+					var _data = response.body;
+					if(_data){
+						resolve(_data)
+					}else{
+						throw new Error('User list fails')
+					}
+				})
+				.catch(function(err){
+					reject(err)
+				})
+			})
+	})
+}
+
+// 根据标签进行群发
+Wechat.prototype.sendByGroup = function(type,message,groupId){
+	var that = this
+
+	var msg = {
+		filter:{},
+		msgtype:type
+	}
+
+	msg[type] = message
+
+	if(!groupId){
+		msg.filter.is_to_all = true
+	}else{
+		msg.filter = {
+			is_to_all:false,
+			group_id:groupId
+		}
+	}
+
+	return new Promise(function(resolve,reject){
+		that
+			.fetchAccessToken()
+			.then(function(data){
+
+				var url = api.mass.group + '&access_token=' + data.access_token;
+
+				request({method:'POST',url:url,body:msg,json:true}).then(function(response){
+					var _data = response.body;
+					if(_data){
+						resolve(_data)
+					}else{
+						throw new Error('sendByGroup fails')
+					}
+				})
+				.catch(function(err){
+					reject(err)
+				})
+			})
+	})
+}
+
+// 删除群发【订阅号与服务号认证后均可用】
+Wechat.prototype.deleteMass = function(msgId){
+	var that = this
+
+
+	return new Promise(function(resolve,reject){
+		that
+			.fetchAccessToken()
+			.then(function(data){
+				var url = api.mass.del + '&access_token=' + data.access_token;
+				var form = {
+					msg_id:msgId
+				}
+				request({method:'POST',url:url,body:form,json:true}).then(function(response){
+					var _data = response.body;
+					if(_data){
+						resolve(_data)
+					}else{
+						throw new Error('deleteMass fails')
+					}
+				})
+				.catch(function(err){
+					reject(err)
+				})
+			})
+	})
+}
+
+// 根据OpenID列表群发【订阅号不可用，服务号认证后可用】
+Wechat.prototype.sendByOpenId = function(type,message,openIds){
+	var that = this
+
+	var msg = {
+		msgtype:type,
+		touser:openIds
+	}
+
+	msg[type] = message
+
+
+	return new Promise(function(resolve,reject){
+		that
+			.fetchAccessToken()
+			.then(function(data){
+
+				var url = api.mass.openId + '&access_token=' + data.access_token;
+
+				request({method:'POST',url:url,body:msg,json:true}).then(function(response){
+					var _data = response.body;
+					if(_data){
+						resolve(_data)
+					}else{
+						throw new Error('Send by openIds fails')
+					}
+				})
+				.catch(function(err){
+					reject(err)
+				})
+			})
+	})
+}
+
+// 预览接口【订阅号与服务号认证后均可用】
+Wechat.prototype.previewMass = function(type,message,openId){
+	var that = this
+
+	var msg = {
+		msgtype:type,
+		touser:openId
+	}
+
+	msg[type] = message
+
+
+	return new Promise(function(resolve,reject){
+		that
+			.fetchAccessToken()
+			.then(function(data){
+
+				var url = api.mass.preview + '&access_token=' + data.access_token;
+
+				request({method:'POST',url:url,body:msg,json:true}).then(function(response){
+					var _data = response.body;
+					if(_data){
+						resolve(_data)
+					}else{
+						throw new Error('Preview pass fails')
+					}
+				})
+				.catch(function(err){
+					reject(err)
+				})
+			})
+	})
+}
+
+// 查询群发消息发送状态【订阅号与服务号认证后均可用】
+Wechat.prototype.checkMass = function(msgId){
+	var that = this
+
+	return new Promise(function(resolve,reject){
+		that
+			.fetchAccessToken()
+			.then(function(data){
+
+				var url = api.mass.check + '&access_token=' + data.access_token;
+				var form = {
+					msg_id:msgId
+				}
+				request({method:'POST',url:url,body:form,json:true}).then(function(response){
+					var _data = response.body;
+					if(_data){
+						resolve(_data)
+					}else{
+						throw new Error('Check pass fails')
+					}
+				})
+				.catch(function(err){
+					reject(err)
+				})
+			})
+	})
+}
+
 
 Wechat.prototype.reply = function(){
 	var content = this.body;

@@ -94,7 +94,9 @@ exports.reply = function*(next){
 				mediaId:data.media_id
 			}
 		}else if(content === '10'){
-			var picData = yield wechatApi.uploadMaterial('image',__dirname + '/2.jpg',{})
+			var picData = yield wechatApi.uploadMaterial('image',__dirname + '/5.jpg',{})
+
+			console.log(picData)
 
 			var media = {
 				articles:[{
@@ -124,10 +126,11 @@ exports.reply = function*(next){
 				}]
 			}
 
-			data = yield wechatApi.uploadMaterial('news',media,{})
-			data = yield wechatApi.fetchMaterial(data.media_id,'news',{})
-			console.log(data)
-			var items = data.news_item
+			var data1 = yield wechatApi.uploadMaterial('news',media,{})
+			var data2 = yield wechatApi.fetchMaterial(data1.media_id,'news',{})
+
+			var items = data2.news_item
+			console.log(data2)
 			var news = []
 			items.forEach(function(item){
 				news.push({
@@ -137,6 +140,7 @@ exports.reply = function*(next){
 					url:item.url
 				})
 			})
+
 
 			reply = news
 		}else if(content === '11'){
@@ -167,7 +171,7 @@ exports.reply = function*(next){
 				})
 			]
 
-			console.log(JSON.stringify(results))
+			//console.log(JSON.stringify(results))
 
 			reply = '1'
 		}else if(content === '12'){
@@ -183,8 +187,8 @@ exports.reply = function*(next){
 			console.log('查看自己的分组')
 			console.log(group2)
 
-			var result = yield wechatApi.moveGroup(message.FromUserName,100)
-			console.log('移动到 100')
+			var result = yield wechatApi.moveGroup(message.FromUserName,102)
+			console.log('移动到 102')
 			console.log(result)
 
 			var groups2 = yield wechatApi.fetchGroups()
@@ -199,16 +203,16 @@ exports.reply = function*(next){
 			console.log('批量移动后的分组列表')
 			console.log(groups3)
 
-			var result3 = yield wechatApi.updateGroup(100,'wechat110')
-			console.log('100 wechat2 改名 wechat100')
+			var result3 = yield wechatApi.updateGroup(103,'wechat113')
+			console.log('103 wechat3 改名 wechat103')
 			console.log(result3)
 
 			var groups4 = yield wechatApi.fetchGroups()
 			console.log('改名后的分组列表')
 			console.log(groups4)
 
-			var result4 = yield wechatApi.deleteGroup(100)
-			console.log('删除100')
+			var result4 = yield wechatApi.deleteGroup(102)
+			console.log('删除102')
 			console.log(result4)
 
 			var groups5 = yield wechatApi.fetchGroups()
@@ -216,8 +220,61 @@ exports.reply = function*(next){
 			console.log(groups5)
 
 			reply = 'Group done!'
+		}else if(content == '13'){
+			var user = yield wechatApi.fetchUsers(message.FromUserName,'en');
+			console.log(user);
+
+			var openIds = [
+				{
+					openid:message.FromUserName,
+					lang:'zh_CN'
+				}
+			]
+			var users = yield wechatApi.fetchUsers(openIds)
+			console.log(users)
+			reply = JSON.stringify(users)
+		}else if(content == '14'){
+			var userlist = yield wechatApi.listUsers()
+
+			console.log(userlist)
+
+			reply = userlist.total
+		}else if(content == '15'){
+
+			var mpnews = {
+				media_id:'9OhhyoRHkpKTTwp8wip5dC5GG5lqOjrrg6vhemGtfaE'
+			}
+			var msgData = yield wechatApi.sendByGroup('mpnews',mpnews)
+			console.log(msgData);
+
+			reply = 'Yeah!'
+
+		}else if(content == '16'){
+			var mpnews = {
+				media_id:'9OhhyoRHkpKTTwp8wip5dC5GG5lqOjrrg6vhemGtfaE'
+			}
+			var msgData = yield wechatApi.previewMass('mpnews',mpnews,message.FromUserName)
+			// var text = {
+			// 	content:'Hello world'
+			// }
+			// var msgData = yield wechatApi.previewMass('text',text,message.FromUserName)
+			console.log(msgData);
+
+			reply = 'Yeah!'
+
+		}else if(content == '17'){
+
+			//var msgData = yield wechatApi.checkMass('mpnews')
+			// var text = {
+			// 	content:'Hello world'
+			// }
+			// var msgData = yield wechatApi.previewMass('text',text,message.FromUserName)
+			//console.log(msgData);
+
+			reply = 'Yeah!'
+
 		}
-		
+
 		this.body = reply
 	}
 	yield next
